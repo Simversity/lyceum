@@ -33,27 +33,7 @@ class Logger(tornado.web.RequestHandler):
         self.write({"Response":"Done"})
 
 class Getlist(tornado.web.RequestHandler):
-    def gt(self, *args):
-        #names = mDB.evtColl.find_one({'meta':'names'})
-        #names['_id'] = str(names['_id'])
-        #Jen = simplejson.JSONEncoder()
-        #j = Jen.encode(names)
-        print "teeds"
-        #import ipdb; ipdb.set_trace()
-        names = {'meta':'names',
-                 'event1':{'fired':20, 'completed':6},
-                 'event2':{'fired':50, 'completed':44},
-                 'event3':{'fired':30, 'completed':26},
-                 'event4':{'fired':10, 'completed':4},
-                 'event5':{'fired':60, 'completed':35},
-                 
-                 }
-        
-        
-        
-        self.write(names)
-        self.finish()
-#all, event, siminar, user        
+            
     def get(self, *args):
         names = mDB.evtColl.find_one({'meta':'names'})
         names.pop("_id")
