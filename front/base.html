@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <script src="/static/jquery-1.10.2.min.js"></script>
+    <link rel="stylesheet" href="/static/css/index.css">
+        
+    {% if t == "event"  %}
+    {% set hr = "?type=siminar&evt_name=" %}
+    {% set ttl = "Event Name"  %}
+    {% set ev_dtl = "All Events" %}
+    {% set sim_dtl = "" + s %}
+    {% elif t == "siminar"  %}
+    {% set hr = "?type=user&evt_name=" + n + "&siminar_id=" %}
+    {% set ttl = "Siminar ID"  %}
+    {% set ev_dtl = "Event: " + n %}
+    {% set sim_dtl = "" + s %}
+    {% else  %}
+    {% set hr = "/user/?evt_name=" + n + "&siminar_id=" + s + "&user_id="  %}
+    {% set ttl = "User ID"  %}
+    {% set ev_dtl = "Event: " + n %}
+    {% set sim_dtl = "Siminar: " + s %}
+    {% end %}
+    
+    </head>
+  <body>
+    
+      <p>
+	<span class="dtl">{{ ev_dtl }}</span><br/>
+	<span class="dtl">{{ sim_dtl }}</span><br/>
+      </p>
+      <table border="0">
+	<tr>
+	  <th><span class="spn">{{ ttl }}</span></th>
+	  <th><span class="spn">Occurred</span></th>
+	  <th><span class="spn">Completed</span></th>
+	</tr>
+	{% for e,v in ev.iteritems() %}
+	<tr>
+	  <td align="center"><a href='{{ hr + e }}'><span class = 'ename spn' id="e_{{ e }}">{{ e }}</span></a></td>
+	  <td align="center"><span class = 'evtfired spn'>{{ v['fired'] }}</span></td>
+	  <td align="center"><span class = 'evtcompleted spn'>{{ v['completed'] }}</span></td>
+	</tr>
+	{% end %}
+      </table>
+      
+    
+  </body>
+  
+</html>

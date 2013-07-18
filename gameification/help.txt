@@ -1,0 +1,57 @@
+Rule format:
+{
+'_id':string,
+'event_name':string,
+'gates':[array of strings], //gates->("randomize":generates random True/False),(<rule_ids>:will check if the mentioned rule(s) has/have been sufficed)
+'threshold':{'and':[{'op':arithmetic operator,'val':integer value, 'check':points/freq (string)--mentions the value(points/frequency) to validate the threshold value against, 'type':string (siminar, context, loi)--mentions the namespace to check in}]} //multiple thresholds can be checked for using a complex and/or logic ('and's & 'or's can be nested),
+'output':{'points':{'all':{'pts':int, 'multiplier':int}, 'siminar':{'pts':int, 'multiplier':int}, 'context':{'pts':int, 'multiplier':int}, 'loi':{'pts':int, 'multiplier':int}}, //will award points in the corresponding namespace (if present in the 'event' data) //multiplier  is optional 
+	{'rewards':{'all':[<array>{'max':integer (the maximum number of users to whom this reward can be given to), 'check':<string:freq/points>,'op':arithmetic operator, 'val':integer OR ('gr'/'le') }]}} //rewards will be awarded in a similar fashion as points with the exception being that it has a limit. The 'max' parameter mentions the limit. If the 'val' parameter is a non integer, then the function will check for the top/bottom most (depending on the val:gr/le) 'max' number of users and remove the reward from the first user.
+
+			   }
+}
+
+The user points/rewards collection is known as 'Rewards'. Each document is known as a 'reward'.
+'reward' fromat
+{
+'user_id':string,
+'event_frequency':{'<event_name>:{'<namespace>':integer}}
+'points':{'<namespace>':integer},
+'rewards':{'<namespace>':[array of strings of reward names]}
+'rules_sufficed':[array of strings of rule ids]
+}
+
+<namespace> ==> siminar_id, context_id, loi_id || actual ids and not the words 'siminar_id'. eg: '1234'
+
+
+Examples:
+---------
+
+Rule
+-----------
+{
+u'gates': [], 
+u'user_id': None, 
+u'siminar_id': None, 
+u'event_name': u'event1', 
+u'context_id': None, 
+u'loi_id': None, 
+u'threshold': {u'and': [{u'type': u'siminar', u'check': u'freq', u'val': 4, u'op': u'>'}]}, 
+u'output': {u'rewards': {u'all': [{u'max': 0, u'v': u'gr', u'check': u'freq', u'name': u'rew1'}], 
+u'siminar': [{u'max': 1, u'v': u'le', u'check': u'points', u'name': u'rew2001'}]}, 
+u'points': {u'all': {u'pts': 10}, u'siminar': {u'pts': 2}}}, 
+u'_id': ObjectId('51ceb0799f6df8351fc98fcb')
+}
+
+---
+User Reward
+-----------
+{
+u'rule_sufficed': [u'51ceb5929f6df84a7e862e00', u'51cec10d9f6df84b60c56514', u'51cec3eb9f6df84c1822f405', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', u'51ceb0799f6df8351fc98fcb', '51ceb0799f6df8351fc98fcb'], 
+u'event_frequency': {u'event2': {u'1234': 1, u'all': 2, u'4567': 1}, u'event1': {u'1234': 4, u'all': 23, u'4567': 10}}, 
+u'rewards': {u'1234': [u'rew2', u'rew2', u'rew2', u'rew2'], u'all': [u'first', u'second', u'third', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1', u'rew1'], u'4567': [u'rew2', u'rew2', u'rew2', u'rew2', u'rew2001', u'rew2001', u'rew2001']}, 
+u'user_id': u'user1', 
+u'_id': ObjectId('51cec88b9f6df84c49ff080e'), 
+u'points': {u'1234': 8, u'all': 170, u'4567': 20}
+}
+
+

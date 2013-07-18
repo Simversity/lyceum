@@ -1,0 +1,39 @@
+<html>
+  <head>
+    <script src="/static/jquery-1.10.2.min.js"></script>
+    <link rel="stylesheet" href="/static/css/user.css">
+  </head>
+  
+  <body>
+    <div id = "user">
+      <table border="0">
+	<tr>
+	  <td><span class="title">User ID:</span></td>
+	  <td><span class="name">{{ ev.get('user_id')  }}</span></td>
+	</tr>
+	
+	<tr>
+	  <td><span class="title">Event Name:</span></td>
+	  <td><span class="name">{{ ev.get('evt_name')  }}</span></td>
+	</tr>
+	
+	<tr>
+	  <td><span class="title">Siminar ID:</span></td>
+	  <td><span class="name">{{ ev.get('siminar_id')  }}</span></td>
+	</tr>
+	{% set fi = ev['time_stamp'] %}
+	{% set co = ev.get('completed') %}
+	<tr><td>Occurred:</td></tr>
+	{% for i in fi  %}
+	<tr><td></td><td>{{ i }}</td></tr>
+	{% end  %}
+	<tr><td>Completed:</td></tr>
+	{% for i in co  %}
+	<tr><td></td><td>{{ i }}</td></tr>
+	{% end  %}
+      </table>
+      
+    </div>
+  </body>
+
+</html>
