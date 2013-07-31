@@ -107,7 +107,7 @@ app = tornado.web.Application([
         (r"/getlist/(.*)", Getlist),
         (r"/user/(.*)", GetUser),
         (r"/static/(.*)", tornado.web.StaticFileHandler, {'path':'/home/sid/simversity/torongo/front/'}),
-        (r"/gamification/applyrules/(.*)")
+        (r"/gamification/applyrules/(.*)", ApplyRules)
         #(r'/(.*)', GotoRoot)
         ], **settings)
 

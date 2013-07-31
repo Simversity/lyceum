@@ -107,16 +107,18 @@ class FootStep(object):
         rule_matched = {}
         rule_sufficed = []
         #import ipdb; ipdb.set_trace()
-
+        
+        
+        
         rules_found = []
-        def findRules(user_id, event_name, context_id=None, siminar_id=None, loi_id=None):
+        def findRules(user_id, event_name, context_id='any', siminar_id='any', loi_id='any'):
             ev = {
                 'event_name':event_name,
                 'context_id':context_id,
                 'siminar_id':siminar_id,
                 'loi_id':loi_id
                 }
-            r = set(self.rule.find(ev))
+            r = set([i['rule_id'] for i in self.rule.find(ev)])
             return r
         
         rules_found = findRules(user_id, event_name, context_id, siminar_id, loi_id)
@@ -127,43 +129,25 @@ class FootStep(object):
             rules_found.union(findRules(user_id, event_name, context_id))
         if context_id:
             rules_found.union(findRules(user_id, event_name))
-        
+        """
         rules_found.union(findRules(user_id, event_name, context_id, siminar_id, loi_id='any'))
-        rules_found.union(findRules(user_id, event_name, context_id, siminar_id='any', loi_id))
-        rules_found.union(findRules(user_id, event_name, context_id='any', siminar_id, loi_id))
+        rules_found.union(findRules(user_id, event_name, context_id, siminar_id='any', loi_id=loi_id))
+        rules_found.union(findRules(user_id, event_name, context_id='any', siminar_id=siminar_id, loi_id=loi_id))
+        """
         
-        
-        #print rules_found 
+        rem = []
         for r in rules_found:
-            if r['_id'] in reward_data['rule_sufficed']:
-                rules_found.remove(r)
+            if r in reward_data['rule_sufficed']:
+               rem.append(r)
+
+        for i in rem:
+            rules_found.remove(i)
+
+        rules_found_d = []
+        for i in rules_found:
+            rules_found_d.append(self.rule.find_one({'rule_id':i}))
             
-        return list(rules_found)
-
-        """    
-        if reward_data.get('rule_sufficed') and reward_data.get('rule_sufficed').get('all'):
-            rule_sufficed.extend(reward_data.get('rule_sufficed').get('all'))
-            
-        
-        
-        if siminar_id:
-            if reward_data.get('rule_sufficed') and reward_data.get('rule_sufficed').get(siminar_id):
-                rule_sufficed.extend(reward_data.get('rule_sufficed').get(siminar_id))
-
-            rule_matched = self._rule_find(user_id, event_name, 'siminar_id', siminar_id,
-                    rule_sufficed, rule_matched)
-
-        if loi_id:
-            rule_matched = self._rule_find(user_id, event_name, 'loi_id',
-                    loi_id, rule_sufficed, rule_matched)
-
-        if context_id:
-            rule_matched = self._rule_find(user_id, event_name, 'context_id',
-                    context_id, rule_sufficed, rule_matched)
-	
-        self._rule_find(user_id, event_name, '', '', rule_sufficed, rule_matched)
-       """
-        
+        return rules_found_d
 
     def issueRewards(self, user_id, rewards):
         return pengine.add_new_reward(user_id, rewards)
@@ -187,7 +171,7 @@ class FootStep(object):
         def getRuleAndCheck(rule):
             for r in reward['rule_sufficed']:
                 #for r in reward['rule_sufficed'][category]:
-                if rule['_id'] == r:
+                if rule['rule_id'] == r:
                     return True
             return False
 
@@ -253,28 +237,46 @@ class FootStep(object):
                 if gate == "randomize":
                     if not genRndTF():
                         return False
-                    """
+                    
                 elif gate == "threshold_points":
-                    si =  rule.get("siminar_id")
-                    if si:
-                        if not check(rewards['points'][si], rule['threshold']):
-                            return False
+                    def findDict(query, dictList):
+                        for i in dictList:
+                            for k, v in query.iteritems():
+                                if v != i.get(k):
+                                    return False
+                            else:
+                                return i
+    
+                    q = {}
+                    for i in ['context_id', 'siminar_id', 'loi_id']:
+                        q[i] = event.get(i)
+                    di = findDict(q, reward['points'])
+                    
+                    if not di:
+                        return False
                     else:
-                        if not check(rewards['points']['all'], rule['threshold']):
+                        p = 0
+                        for i in di['data']:
+                            if i.get('multiplier'):
+                                p += i['multiplier'] * i['pts']
+                            else:
+                                p += i['pts']
+                        if not check(p, rule['threshold']):
                             return False
+                    
                 elif gate == "threshold_frequency":
                     f = reward['event_frequency'].get(rule['event_name'])
                     if not f:
                         f = 0
                     if not check(f, rule['threshold']):
                         return False
-                    """
+                    
                 else:
                     if not getRuleAndCheck(rule):
                         return False
                 
-            if not processThreshold(rule):
-                return False
+            #if not processThreshold(rule):
+            #    return False
 
             return True # all gates have sufficed
                         
@@ -290,16 +292,15 @@ class FootStep(object):
                 def findDict(query, dictList):
                     for i in dictList:
                         for k, v in query.iteritems():
-                            if v != i[k]:
+                            if v != i.get(k):
                                 return False
                         else:
                             return i
     
                 q = {}
-                for i in ['context', 'siminar', 'loi']:
-                    q[i] = event.get(i + '_id')
-                        
-  
+                for i in ['context_id', 'siminar_id', 'loi_id']:
+                    q[i] = event.get(i)
+                 
                 di = findDict(q, reward['points'])
                 if di:
                     points['rule_id'] = rule['rule_id']
@@ -309,79 +310,20 @@ class FootStep(object):
                     q['data'] = [points]
                     reward['points'].append(q)
 
-               di = findDict(q, reward['rewards'])     
-               if di:
-                   rw = {
-                       'rwd':rwds, 
-                       'rule_id':rule['rule_id']
-                       }
-                   di['data'].append(rw)
-               else:
-                   rw = {
-                       'rwd':rwds, 
-                       'rule_id':rule['rule_id']
-                       }
-                   q['data'] = [rw]
-                   reward['rewards'].append(q)
-                   
-                  """" 
-
-                for i in ['context', 'siminar', 'loi']:
-                    rid = rule.get(i + '_id')
-                    if rid != 'all':
-                        nid = event.get(i + '_id')
-                    else:
-                        nid = 'all'
-                        # #points
-                    p = reward['points'].get(nid)
-                    if not p:
-                        p = reward['points'][nid] = 0
-                    if points.get('multiplier'):
-                        p += points.get('multiplier') * points.get('pts')
-                    else:
-                        p += points.get('pts')
-                        
-                    reward['points'][nid] = p
-                        
-                        # #rewards
-                     for r in rwds:
-                         if reward['rewards'].get(nid):
-                             reward['rewards'][nid].append(r)
-                         else:
-                             reward['rewards'][nid] = [r]
-                            
-                            if r['max']: # not zero
-                                srt = {
-                                    'gr':-1,#greatest
-                                    'le':1,#least
-                                    }.get(r['v'])
-                                if r['check'] == 'points':
-                                    d = 'points'
-                                else:
-                                    d = 'event_frequency.' + rule['event_name']
-                                c = self.rewardColl.find({"rewards." + rid : r['name']}, sort=[(d + rid, srt)])
-                                if c.count() < r['max']:
-                                    rw = reward["rewards"].get(rid)
-                                    if rw:
-                                        rw.append(r['name'])
-                                        reward["rewards"][rid] = rw
-                                    else:
-                                        reward["rewards"][rid] = [r['name']]
-                                        
-                                else:
-                                    rec = list(c)[0]
-                                    if srt == 1 and r['check'] == 'points':
-                                        if reward['points'][rid] > rec['points'][rid]:
-                                            rec['rewards'][rid].remove(r['name'])
-                                            self.rewardColl.save(rec)
-                                            if reward['rewards'].get(rid):
-                                                reward['rewards'][rid].append(r['name'])
-                                            else:
-                                                reward['rewards'][rid] = [r['name']]
-                            else:
-                            """
-                                    
-                        
+                di = findDict(q, reward['rewards'])     
+                if di:
+                    rw = {
+                        'rwd':rwds, 
+                        'rule_id':rule['rule_id']
+                        }
+                    di['data'].append(rw)
+                else:
+                    rw = {
+                        'rwd':rwds, 
+                        'rule_id':rule['rule_id']
+                        }
+                    q['data'] = [rw]
+                    reward['rewards'].append(q)
                 return True
                 
             else:
@@ -393,7 +335,7 @@ class FootStep(object):
                 if sl[i] == 1 and procRule(ruleList[i]):
                     sl[i] = 0
                     
-                    reward['rule_sufficed'].append(str(ruleList[i]['_id']))
+                    reward['rule_sufficed'].append(str(ruleList[i]['rule_id']))
                     
                     """
                     si = ruleList[i].get("siminar_id")
@@ -413,8 +355,6 @@ class FootStep(object):
             siminar_id=None, **kwargs):
         reward_data = pengine.get_rewards(user_id)
         
-        
-        
         event = {
             'event_name':event_name,
             'siminar_id': siminar_id,
@@ -426,8 +366,8 @@ class FootStep(object):
         self.updateEventFreq(event, reward_data)            
         rulesList = self.ruleMatcher(user_id, event_name, reward_data,
                 siminar_id, loi_id, context_id)
-        #print len(rulesList)
+        #print(rulesList)
         drawer =  self.ruleProcessor(rulesList, reward_data, event)
         self.rewardColl.save(drawer)
-        print drawer
+        #print drawer
 fstep = FootStep()
